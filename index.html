@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>NTUT EE Roadmap</title>
+  <style>
+    :root {
+      --ink: #1e293b; --muted: #64748b; --faint: #94a3b8; --line: #dbe3ed;
+      --panel: #f6f8fb; --white: #fff; --blue: #2563eb; --blue-bg: #eff6ff;
+      --green: #15803d; --green-bg: #f0fdf4; --amber: #b45309; --amber-bg: #fffbeb;
+      --red: #b91c1c; --red-bg: #fef2f2; --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef2f7; color: var(--ink); font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app { max-width: 760px; min-height: 100vh; margin: 0 auto; padding: 28px 24px 42px; background: var(--white); }
+    header { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+    h1 { font-size: 22px; margin: 0; letter-spacing: -.02em; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .button { padding: 6px 9px; background: var(--white); border: 1px solid var(--line); border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .button:hover { background: var(--panel); }
+    .button.primary { background: var(--blue); border-color: var(--blue); color: white; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat, .done { border-radius: 9px; padding: 10px 11px; background: var(--panel); }
+    .stat strong { display: block; font-size: 17px; font-weight: 650; }
+    .small { color: var(--muted); font-size: 11px; }
+    .done-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+    .done { background: var(--white); border: 1px solid #bbf7d0; }
+    .done strong { color: var(--green); font-size: 17px; }
+    .tabs { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+    .tab { padding: 9px 16px 8px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: 13px; cursor: pointer; }
+    .tab.active { border-color: var(--ink); color: var(--ink); font-weight: 650; }
+    .card { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 10px; background: var(--white); }
+    .card.locked { border: 2px solid #93c5fd; }
+    .card.warning { border-color: #fecaca; }
+    .card-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
+    .card-title { flex: 1; min-width: 0; }
+    .semester { font-size: 15px; font-weight: 700; }
+    .badge, .bucket, .tag { display: inline-block; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .badge.info, .bucket.major, .tag.sys { background: var(--blue-bg); color: var(--blue); }
+    .badge.warn, .bucket.elec, .tag.sw { background: var(--amber-bg); color: var(--amber); }
+    .badge.danger { background: var(--red-bg); color: var(--red); }
+    .bucket.gened, .bucket.cross, .tag.ai { background: var(--green-bg); color: var(--green); }
+    .credits { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .credits strong { font-size: 20px; }
+    .course-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 13px 14px; }
+    .section-label { margin: 0 0 8px; color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: .07em; }
+    .course, .choice { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 7px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .course .bucket { margin-top: 1px; }
+    .choice { align-items: center; cursor: pointer; color: var(--muted); }
+    .choice input { margin: 0; width: 15px; height: 15px; accent-color: var(--blue); flex: 0 0 auto; }
+    .choice.on { color: var(--ink); }
+    .tag { margin-right: 4px; font-size: 9px; }
+    .retake { color: var(--red); }
+    .footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 14px; color: var(--muted); background: var(--panel); font-size: 11px; }
+    .footer.info { color: var(--blue); background: var(--blue-bg); }
+    .footer.green { color: var(--green); background: var(--green-bg); }
+    .footer.warn { color: var(--amber); background: var(--amber-bg); }
+    .footer.danger { color: var(--red); background: var(--red-bg); }
+    .cross-input { width: 70px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 5px; }
+    .notice { margin: 12px 0; padding: 10px 14px; border-radius: 8px; background: var(--red-bg); color: var(--red); font-size: 12px; line-height: 1.6; }
+    .summary, .boya { padding: 14px; border-radius: 10px; background: var(--panel); }
+    .summary-head, .bucket-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .mini { padding: 8px 10px; background: var(--white); border: 1px solid var(--line); border-radius: 6px; }
+    .mini.ok { border-color: #bbf7d0; }
+    .mini strong { font-size: 14px; }
+    .ok-text { color: var(--green); }
+    .warn-text { color: var(--amber); }
+    .bar { height: 6px; border-radius: 4px; overflow: hidden; background: var(--line); }
+    .bar > i { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .18s ease; }
+    .credit-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .credit-top .section-label { margin: 0; }
+    .bucket-grid, .boya-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .credit-bucket { border-radius: 8px; padding: 12px; background: var(--panel); }
+    .credit-bucket.gap { outline: 1px solid #fde68a; }
+    .gap-label { padding: 1px 5px; border-radius: 3px; background: var(--amber-bg); color: var(--amber); font-size: 9px; font-weight: 700; }
+    .credit-bucket .small { display: flex; justify-content: space-between; margin-top: 5px; }
+    .boya { margin-bottom: 18px; }
+    .boya-grid { margin-top: 10px; gap: 8px; }
+    .boya-item { padding: 8px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); }
+    .boya-item.complete { border-color: #bbf7d0; }
+    .boya-item.bug { border-color: #fde68a; }
+    .bug-note { margin-top: 8px; padding: 5px 7px; border-radius: 5px; background: var(--amber-bg); color: var(--amber); font-size: 10px; }
+    .remaining { padding: 12px 14px; border-radius: 8px; background: var(--panel); }
+    .remaining-row { display: grid; grid-template-columns: 88px 44px 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+    .remaining-row:last-child { border: 0; }
+    dialog { max-width: 480px; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px #0f172a33; padding: 20px; color: var(--ink); }
+    dialog::backdrop { background: #0f172a66; }
+    dialog h2 { margin: 0 0 8px; font-size: 18px; }
+    dialog p { color: var(--muted); font-size: 13px; }
+    dialog textarea { width: 100%; min-height: 130px; margin: 8px 0 12px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; resize: vertical; font: 11px ui-monospace, monospace; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .hide { display: none !important; }
+    @media (max-width: 560px) {
+      .app { padding: 20px 14px 30px; }
+      header { display: block; }
+      .actions { justify-content: flex-start; margin-top: 12px; }
+      .stats, .done-grid { grid-template-columns: repeat(2, 1fr); }
+      .course-columns { grid-template-columns: 1fr; gap: 8px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .footer { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div><h1>NTUT EE Roadmap</h1><p class="subtitle">113-batch · Y3S1 進行中 · 2028 畢業 · 目標：AI Application Engineer</p></div>
+      <div class="actions"><button class="button" id="export-button">匯出規劃</button><button class="button" id="import-button">匯入規劃</button><button class="button" id="reset-button">清除已選</button></div>
+    </header>
+    <section class="stats" id="stats"></section>
+    <section class="done-grid" id="done-grid"></section>
+    <nav class="tabs" aria-label="Roadmap sections"><button class="tab active" data-tab="planner">選課計劃</button><button class="tab" data-tab="credits">學分狀況</button></nav>
+    <section id="planner"></section>
+    <section id="credits" class="hide"></section>
+  </main>
+  <dialog id="data-dialog"><h2 id="dialog-title"></h2><p id="dialog-description"></p><textarea id="data-field" spellcheck="false"></textarea><div class="dialog-actions"><button class="button" id="dialog-cancel">取消</button><button class="button primary" id="dialog-confirm">確認</button></div></dialog>
+
+  <script>
+  (() => {
+    'use strict';
+    const doneSems = [
+      { sem: '113-1', yr: 'Y1S1', avg: 87.26, cr: 19 }, { sem: '113-2', yr: 'Y1S2', avg: 83.00, cr: 19 }, { sem: '114-1', yr: 'Y2S1', avg: 86.35, cr: 23 }, { sem: '114-2', yr: 'Y2S2', avg: 84.30, cr: 19 }
+    ];
+    const buckets = [
+      { id: 'gened', label: '共同必修 △', done: 23, total: 28, proj: 23, color: 'var(--green)' },
+      { id: 'major', label: '專業必修 ▲', done: 46, total: 63, proj: 46, color: 'var(--blue)' },
+      { id: 'elec', label: '專業選修 ★', done: 9, total: 21, proj: 9, color: 'var(--amber)' },
+      { id: 'free', label: '跨域+自由', done: 2, total: 20, proj: 2, color: 'var(--muted)' }
+    ];
+    const boyaRows = [
+      { label: '人文與藝術', done: 2, total: 4, note: '115-1 補完' }, { label: '自然與科學', done: 4, total: 4, complete: true },
+      { label: '創新與創業', done: 2, total: 4, bug: true }, { label: '自由向度（自選）', done: 2, total: 3, note: '親密關係已計入' }
+    ];
+    const sem1142 = [
+      { n: '專業英文 (2/2)', cr: 2, b: '△', score: 96 }, { n: '親密關係 (博雅 · 社會與法治向度)', cr: 2, b: '△', score: 89 }, { n: '工程數學(二)', cr: 3, b: '▲', score: 78 }, { n: '電子學實習(二)', cr: 1, b: '▲', score: 61 }, { n: '電磁學', cr: 3, b: '▲', score: 78 },
+      { n: '資料結構', cr: 3, b: '★', score: 88 }, { n: '計算機組織', cr: 3, b: '★', score: 81 }, { n: '國際觀培養：日語與文化(二)', cr: 2, b: '跨域', score: 98 }
+    ];
+    const semesters = [
+      { sem: '115-1', yr: 'Y3S1', note: 'Capstone 開始 · 東京實習後衝刺', req: [
+        { n: '學院指定向度-人文與藝術 (2/2)', cr: 2, b: '△' }, { n: '學生自選向度', cr: 3, b: '△' }, { n: '通訊系統實習 ◎', cr: 1, b: '▲' }, { n: '應用軟體設計實習 ◎', cr: 1, b: '▲' }, { n: '實務專題(一)', cr: 2, b: '▲' }, { n: '專題討論 (1/2)', cr: 1, b: '▲' }
+      ], elec: [{ n: '計算機演算法', cr: 3, t: 'sys' }, { n: '系統程式', cr: 3, t: 'sys' }, { n: 'FPGA系統設計實務', cr: 3, t: 'sw' }, { n: '密碼學', cr: 3, t: 'sys' }] },
+      { sem: '115-2', yr: 'Y3S2', note: '▲ 全部結束 · 補修在此學期', retakeWarning: true, req: [
+        { n: '電子學(二)', cr: 3, b: '▲', retake: true }, { n: '機率', cr: 3, b: '▲', retake: true }, { n: '數位系統設計實習◎ / 高頻電路實習◎', cr: 1, b: '▲' }, { n: '校外實習', cr: 2, b: '▲' }, { n: '專題討論 (2/2)', cr: 1, b: '▲' }, { n: '實務專題(二)', cr: 2, b: '▲' }
+      ], elec: [{ n: '機器學習', cr: 3, t: 'ai', pri: true }, { n: '作業系統', cr: 3, t: 'sys' }, { n: '資料庫系統', cr: 3, t: 'sys' }, { n: '嵌入式系統概論', cr: 3, t: 'sw' }] },
+      { sem: '116-1', yr: 'Y4S1', note: '純選修 · 求職季', req: [], elec: [{ n: '人工智慧', cr: 3, t: 'ai', pri: true }, { n: '深度學習', cr: 3, t: 'ai', pri: true }, { n: '大數據處理與系統實作', cr: 3, t: 'sys' }, { n: '計算機網路', cr: 3, t: 'sw' }, { n: '全端網頁軟體系統實作', cr: 3, t: 'sw' }, { n: '軟體工程', cr: 3, t: 'sw' }], hasCross: true },
+      { sem: '116-2', yr: 'Y4S2', note: '畢業年 · 作品集衝刺', grad: true, req: [], elec: [{ n: '深度學習應用開發實務', cr: 3, t: 'ai', pri: true }, { n: '自然語言處理與情感計算', cr: 3, t: 'ai', pri: true }, { n: '深度強化學習', cr: 3, t: 'ai' }, { n: 'Python物件導向實務應用', cr: 3, t: 'sw' }], hasCross: true }
+    ];
+    const tagNames = { ai: 'AI', sys: 'SYS', sw: 'SW' };
+    const bucketClasses = { '△': 'gened', '▲': 'major', '★': 'elec', '跨域': 'cross' };
+    const state = { checked: read('ntut-roadmap-checked', {}), cross: read('ntut-roadmap-cross', {}), projected: false };
+    function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } }
+    function save() { localStorage.setItem('ntut-roadmap-checked', JSON.stringify(state.checked)); localStorage.setItem('ntut-roadmap-cross', JSON.stringify(state.cross)); }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]); }
+    function bar(value, total, color = 'var(--blue)') { return `<div class="bar"><i style="width:${Math.min(value / total * 100, 100)}%;background:${color}"></i></div>`; }
+    function bucket(b) { return `<span class="bucket ${bucketClasses[b] || 'gened'}">${b}</span>`; }
+    function loadInfo(cr) { return cr === 0 ? ['尚未規劃', 'info'] : cr <= 12 ? ['輕鬆', 'green'] : cr <= 17 ? ['正常', 'info'] : cr <= 20 ? ['偏重', 'warn'] : ['過重', 'danger']; }
+    function courseId(s, c) { return `${s.sem}::${c.n}`; }
+    function electiveCredits(s) { return s.elec.filter(c => state.checked[courseId(s, c)]).reduce((sum, c) => sum + c.cr, 0); }
+    function allPlanned() { return semesters.reduce((sum, s) => sum + s.req.reduce((v, c) => v + c.cr, 0) + electiveCredits(s) + (Number(state.cross[s.sem]) || 0), 0); }
+    function renderStaticTop() {
+      document.querySelector('#stats').innerHTML = [['85.28', '整體平均'], ['80 / 132', '61% 學分'], ['19 / 55', '前次班排名'], ['34 / 109', '前次系排名']].map(([v, l]) => `<div class="stat"><strong>${v}</strong><span class="small">${l}</span></div>`).join('');
+      document.querySelector('#done-grid').innerHTML = doneSems.map(s => `<div class="done"><div class="small">${s.yr} · ${s.sem} · ${s.cr}cr</div><strong>${s.avg}</strong></div>`).join('');
+    }
+    function renderPlanner() {
+      const lockedReq = sem1142.filter(c => !['★', '跨域'].includes(c.b));
+      const lockedElec = sem1142.filter(c => ['★', '跨域'].includes(c.b));
+      let html = `<article class="card locked"><div class="card-head"><div class="card-title"><div><span class="semester">114-2</span> <span class="small">Y2S2</span> <span class="badge info">已完成</span></div><div class="small">成績已公布 · 電子學(二)與機率 W，115-2 補修</div></div><div class="credits"><strong>19</strong><span class="small">通過 cr</span><span class="badge warn">偏重</span></div></div><div class="course-columns"><div><p class="section-label">通過必修 11cr</p>${lockedReq.map(c => `<div class="course">${bucket(c.b)}<span>${escapeHtml(c.n)} <span class="small">${c.score} 分</span></span></div>`).join('')}</div><div><p class="section-label">通過選修／跨域 8cr</p>${lockedElec.map(c => `<div class="course">${bucket(c.b)}<span>${escapeHtml(c.n)} <span class="small">${c.cr}cr · ${c.score} 分</span></span></div>`).join('')}</div></div><div class="footer info"><span>實績：★ 9/21 · 跨域 2/20 · 博雅 10/15</span><span>電子學(二) + 機率 → 115-2 補修</span></div></article>`;
+      html += semesters.map(s => semesterCard(s)).join('');
+      const planned = allPlanned(), needed = 33, star = 9 + semesters.reduce((sum, s) => sum + electiveCredits(s), 0), cross = 2 + Object.values(state.cross).reduce((sum, v) => sum + (Number(v) || 0), 0), track = planned >= needed;
+      html += `<div class="notice">⚠ <strong>115-2 補修注意：</strong>電子學(二) 3cr + 機率 3cr 要在同一學期補修，加上原本 6cr 必修，光必修就 12cr。選修盡量控制，避免過重。</div><section class="summary"><div class="summary-head"><strong>畢業計劃總覽 <span class="small">(115-1 以後)</span></strong><span class="${track ? 'ok-text' : 'warn-text'}"><b>${planned} / ${needed}</b> ${track ? '✓ 足夠畢業' : `還差 ${needed - planned} cr`}</span></div>${bar(planned, needed, track ? 'var(--green)' : 'var(--amber)')}<div class="summary-grid">${mini('★ 選修', star, 21)}${mini('跨域+自由', cross, 20)}${mini('畢業總學分', 80 + planned, 132)}</div></section>`;
+      document.querySelector('#planner').innerHTML = html;
+      document.querySelectorAll('[data-course]').forEach(input => input.addEventListener('change', event => { state.checked[event.target.dataset.course] = event.target.checked; save(); renderPlanner(); }));
+      document.querySelectorAll('[data-cross]').forEach(input => input.addEventListener('input', event => { state.cross[event.target.dataset.cross] = Math.max(0, Number(event.target.value) || 0); save(); renderPlanner(); }));
+    }
+    function mini(label, value, total) { const ok = value >= total; return `<div class="mini ${ok ? 'ok' : ''}"><div class="small">${label}</div><strong class="${ok ? 'ok-text' : ''}">${value} / ${total}${ok ? ' ✓' : ''}</strong></div>`; }
+    function semesterCard(s) {
+      const rc = s.req.reduce((sum, c) => sum + c.cr, 0), ec = electiveCredits(s), cc = Number(state.cross[s.sem]) || 0, total = rc + ec + cc, [level, tone] = loadInfo(total);
+      const req = s.req.length ? s.req.map(c => `<div class="course ${c.retake ? 'retake' : ''}"><span class="bucket ${c.retake ? 'badge danger' : bucketClasses[c.b]}">${c.retake ? '補修' : c.b} ${c.cr}cr</span><span>${escapeHtml(c.n)}</span></div>`).join('') : '<div class="small"><i>本學期無必修課</i></div>';
+      const choices = s.elec.map(c => { const id = courseId(s, c), on = Boolean(state.checked[id]); return `<label class="choice ${on ? 'on' : ''}"><input type="checkbox" data-course="${escapeHtml(id)}" ${on ? 'checked' : ''}><span><span class="tag ${c.t}">${tagNames[c.t]}</span>${c.pri ? '<span class="warn-text">★</span> ' : ''}${escapeHtml(c.n)} <span class="small">${c.cr}cr</span></span></label>`; }).join('');
+      const cross = s.hasCross ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><p class="section-label">跨域+自由（其他系）</p><label class="small">預計 <input class="cross-input" type="number" min="0" max="21" value="${cc}" data-cross="${s.sem}"> cr</label></div>` : '';
+      return `<article class="card ${s.retakeWarning ? 'warning' : ''}"><div class="card-head"><div class="card-title"><div><span class="semester">${s.sem}</span> <span class="small">${s.yr}</span> ${s.retakeWarning ? '<span class="badge danger">⚠ 補修</span>' : ''} ${s.grad ? '<span class="badge warn">畢業學期</span>' : ''}</div><div class="small">${s.note}</div></div><div class="credits"><strong>${total}</strong><span class="small">cr</span><span class="badge ${tone}">${level}</span></div></div><div class="course-columns"><div><p class="section-label">必修 ${rc ? `${rc} cr` : '（無）'}</p>${req}</div><div><p class="section-label">★ 選修 ${ec ? `+${ec} cr 已選` : '（未選）'}</p>${choices}${cross}</div></div><div class="footer ${tone}"><span>${rc}cr 必修${ec ? ` + ${ec}cr ★` : ''}${cc ? ` + ${cc}cr 跨域` : ''} = ${total}cr 合計</span><span>${total ? '已儲存 ✓' : '尚未規劃'}</span></div></article>`;
+    }
+    function renderCredits() {
+      const projected = false, total = 80;
+      const bucketHtml = buckets.map(b => { const value = projected ? b.proj : b.done, gap = b.id === 'elec' && value < 12; return `<div class="credit-bucket ${gap ? 'gap' : ''}"><div class="bucket-head"><span class="small">${b.label} ${gap ? '<span class="gap-label">缺口</span>' : ''}</span><strong>${value} / ${b.total}</strong></div>${bar(value, b.total, b.color)}<div class="small"><span>${b.total - value} cr 剩餘</span>${projected && b.proj !== b.done ? `<span class="ok-text">+${b.proj - b.done} 本學期</span>` : ''}</div></div>`; }).join('');
+      const boya = boyaRows.map(row => `<div class="boya-item ${(row.complete || row.done === row.total) ? 'complete' : ''} ${row.bug ? 'bug' : ''}"><div class="small">${row.label}</div><strong class="${(row.complete || row.done === row.total) ? 'ok-text' : ''}">${row.done} / ${row.total}${(row.complete || row.done === row.total) ? ' ✓' : ''}</strong>${projected && row.note ? `<div class="small ok-text">${row.note}</div>` : ''}${row.bug ? '<div class="small warn-text">app 顯示 0 ← bug</div>' : ''}</div>`).join('');
+      const rows = [['△ 共同必修', '5 cr', '115-1 完成：人文與藝術(2/2) + 學生自選向度 3cr'], ['▲ 專業必修', '17 cr', '115-1(5cr) + 115-2(12cr 含補修)，Y3S2 後全部完成'], ['★ 專業選修', '12 cr', '114-2 後 9/21，還差 12cr，Y3–Y4 選修補完'], ['跨域+自由', '18 cr', '日文課 2cr 已計入。★ 超過 21cr 的部分可直接轉計跨域 → 多選 AI 課就能一起填滿']].map(row => `<div class="remaining-row"><b>${row[0]}</b><b>${row[1]}</b><span class="small">${row[2]}</span></div>`).join('');
+      document.querySelector('#credits').innerHTML = `<div class="credit-top"><div><p class="section-label">CREDIT BUCKETS</p><div class="small">目前：${total} / 132 (${Math.round(total / 132 * 100)}%)</div></div></div><div class="bucket-grid" style="margin-bottom:20px">${bucketHtml}</div><p class="section-label">博雅學分 — 10 / 15</p><section class="boya">${bar(10, 15, 'var(--muted)')}<div class="boya-grid">${boya}</div><div class="bug-note">⚠ App bug：創新與創業 2cr 被誤分類為自由向度。總計正確。</div></section><p class="section-label">剩餘學分分佈（114-2 後）</p><section class="remaining">${rows}</section>`;
+    }
+    function showDialog(kind) {
+      const dialog = document.querySelector('#data-dialog'), field = document.querySelector('#data-field'), title = document.querySelector('#dialog-title'), description = document.querySelector('#dialog-description'), confirm = document.querySelector('#dialog-confirm');
+      if (kind === 'export') { title.textContent = '匯出你的規劃'; description.textContent = '複製以下內容，然後在另一台裝置選擇「匯入規劃」。'; field.value = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), checked: state.checked, cross: state.cross }, null, 2); field.readOnly = true; confirm.textContent = '複製'; confirm.onclick = async () => { try { await navigator.clipboard.writeText(field.value); confirm.textContent = '已複製'; } catch { field.select(); document.execCommand('copy'); confirm.textContent = '已複製'; } }; }
+      else { title.textContent = '匯入你的規劃'; description.textContent = '貼上先前匯出的內容。匯入會覆蓋這個瀏覽器目前的選課資料。'; field.value = ''; field.readOnly = false; confirm.textContent = '匯入'; confirm.onclick = () => { try { const data = JSON.parse(field.value); if (!data || typeof data.checked !== 'object' || typeof data.cross !== 'object') throw new Error(); state.checked = data.checked; state.cross = data.cross; save(); renderPlanner(); dialog.close(); } catch { description.textContent = '格式無法讀取，請確認貼上的是由本頁匯出的完整內容。'; } }; }
+      dialog.showModal(); if (kind === 'export') field.select();
+    }
+    document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => { const tab = button.dataset.tab; document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === button)); document.querySelector('#planner').classList.toggle('hide', tab !== 'planner'); document.querySelector('#credits').classList.toggle('hide', tab !== 'credits'); }));
+    document.querySelector('#export-button').addEventListener('click', () => showDialog('export'));
+    document.querySelector('#import-button').addEventListener('click', () => showDialog('import'));
+    document.querySelector('#reset-button').addEventListener('click', () => { if (confirm('要清除這個瀏覽器中所有已勾選的課程與跨域學分嗎？')) { state.checked = {}; state.cross = {}; save(); renderPlanner(); } });
+    document.querySelector('#dialog-cancel').addEventListener('click', () => document.querySelector('#data-dialog').close());
+    renderStaticTop(); renderPlanner(); renderCredits();
+  })();
+  </script>
+</body>
+</html>
