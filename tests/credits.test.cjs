@@ -19,7 +19,9 @@ test('projection conserves credits while transferring elective overflow exactly 
   const state = { checked: {}, cross: { '116-1': 2 } };
   for (const s of semesters) for (const c of s.elec) state.checked[`${s.sem}::${c.n}`] = true;
   const p = model.project(history, semesters, state, targets);
-  assert.equal(p.total, 80 + 22 + 54 + 2);
+  assert.equal(p.total, 80 + 21 + 54 + 2);
+  assert.equal(p.buckets.gened, 27);
+  assert.equal(p.categoriesEnough, false);
   assert.equal(p.overflow, 42);
   assert.equal(p.buckets.elec, 21);
   assert.equal(p.buckets.free, 46);
