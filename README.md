@@ -1,4 +1,4 @@
-# NTUT EE Roadmap
+# NTUT ECE Roadmap
 
 `index.html` 是可攜式的單檔網頁版，不需要 Node.js、npm、React 或任何額外套件。
 

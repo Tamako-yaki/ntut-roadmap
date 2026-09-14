@@ -7,6 +7,8 @@ const SEMS_DONE = [
   { sem: "114-1", yr: "Y2S1", avg: 86.35, cr: 23 },
   { sem: "114-2", yr: "Y2S2", avg: 84.30, cr: 19 },
 ];
+const GRADUATION_CREDITS = 132;
+const COMPLETED_CREDITS = SEMS_DONE.reduce((sum, s) => sum + s.cr, 0);
 
 // 已確認的實際修畢學分；proj 保留為與 done 相同以相容舊介面。
 const BUCKETS = [
@@ -159,7 +161,7 @@ function CreditsTab() {
     <div>
       <SecLabel>CREDIT BUCKETS</SecLabel>
       <div style={{ fontSize: 10, color: "var(--color-text-tertiary)", marginBottom: 10 }}>
-        目前：80 / 132 (61%)
+        目前：{COMPLETED_CREDITS} / {GRADUATION_CREDITS} ({Math.round(COMPLETED_CREDITS / GRADUATION_CREDITS * 100)}%)
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: "1.5rem" }}>
@@ -208,6 +210,9 @@ function CreditsTab() {
           })}
         </div>
         <div style={{ fontSize: 9, color: "var(--color-text-warning)", padding: "5px 7px", background: "var(--color-background-warning)", borderRadius: 5, marginTop: 8 }}>
+          認列規則：必修 15cr 歸共同必修；修滿後額外博雅最多 4cr 可歸跨域+自由，不得重複計入。
+        </div>
+        <div style={{ fontSize: 9, color: "var(--color-text-warning)", padding: "5px 7px", background: "var(--color-background-warning)", borderRadius: 5, marginTop: 8 }}>
           ⚠ App bug：創新與創業 2cr 被誤分類為自由向度。總計正確。
         </div>
       </div>
@@ -215,10 +220,10 @@ function CreditsTab() {
       <SecLabel>剩餘學分分佈</SecLabel>
       <div style={{ background: "var(--color-background-secondary)", borderRadius: 8, padding: "12px 14px" }}>
         {[
-          ["△ 共同必修", "5 cr",  "115-1 完成：人文與藝術(2/2) + 學生自選向度 3cr"],
+          ["△ 共同必修", "5 cr",  "含博雅必修 15cr；目前博雅 10/15，115-1 補完 5cr"],
           ["▲ 專業必修", "17 cr", "115-1(5cr) + 115-2(12cr 含補修)，Y3S2 後全部完成"],
-          ["★ 專業選修", "12 cr", "114-2 後 9/21，還差 12cr，Y3–Y4 選修補完"],
-          ["跨域+自由",  "18 cr", "日文課 2cr 已計入。★ 超過 21cr 的部分可直接轉計跨域 → 多選 AI 課就能一起填滿"],
+          ["★ 專業選修", "12 cr", "114-2 後 9/21，還差 12cr；超過 21cr 的部分可轉列跨域+自由"],
+          ["跨域+自由",  "18 cr", "日文課 2cr 已計入；可含本系、他系、校院級課程，以及完成必修後額外博雅最多 4cr"],
         ].map(([label, cr, note]) => (
           <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "7px 0", borderBottom: "0.5px solid var(--color-border-tertiary)", fontSize: 11 }}>
             <span style={{ width: 80, color: "var(--color-text-secondary)", flexShrink: 0, fontWeight: 500 }}>{label}</span>
@@ -238,12 +243,20 @@ function PlannerTab({ checked, toggleCourse, cross, updateCross }) {
     const ec = s.elec.filter(e => checked[`${s.sem}::${e.n}`]).reduce((a, e) => a + e.cr, 0);
     return sum + rc + ec + (cross[s.sem] || 0);
   }, 0);
-  const starDone = 9 + SEMESTERS.reduce((sum, s) =>
+  const rawStarDone = 9 + SEMESTERS.reduce((sum, s) =>
     sum + s.elec.filter(e => checked[`${s.sem}::${e.n}`]).reduce((a, e) => a + e.cr, 0), 0
   );
-  const crossDone = 2 + Object.values(cross).reduce((a, b) => a + (b || 0), 0);
-  const needed = 33; // 52 total after 114-2, minus 114-2 itself (19cr)
-  const onTrack = totalPlanned >= needed;
+  const starOverflow = Math.max(0, rawStarDone - 21);
+  const starDone = Math.min(rawStarDone, 21);
+  const crossDone = 2 + Object.values(cross).reduce((a, b) => a + (b || 0), 0) + starOverflow;
+  const needed = GRADUATION_CREDITS - COMPLETED_CREDITS;
+  const projectedTotal = COMPLETED_CREDITS + totalPlanned;
+  const totalEnough = projectedTotal >= GRADUATION_CREDITS;
+  const categoriesEnough = starDone >= 21 && crossDone >= 20;
+  const onTrack = totalEnough && categoriesEnough;
+  const status = totalEnough
+    ? (categoriesEnough ? "✓ 足夠畢業" : "總學分足夠，分類未達標")
+    : `還差 ${GRADUATION_CREDITS - projectedTotal} cr`;
 
   return (
     <div>
@@ -369,17 +382,20 @@ function PlannerTab({ checked, toggleCourse, cross, updateCross }) {
                       })}
                     </>
                   )}
-                  {s.hasCross && (
-                    <div style={{ marginTop: s.elec.length > 0 ? 10 : 0, paddingTop: s.elec.length > 0 ? 10 : 0, borderTop: s.elec.length > 0 ? "0.5px solid var(--color-border-tertiary)" : "none" }}>
-                      <div style={{ fontSize: 9, color: "var(--color-text-tertiary)", marginBottom: 5, fontWeight: 500, letterSpacing: ".06em" }}>跨域+自由 (其他系)</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <input type="number" min={0} max={21} value={cross[s.sem] || 0}
-                          onChange={(e) => updateCross(s.sem, Math.max(0, +e.target.value))}
-                          style={{ width: 60, fontSize: 13 }} />
-                        <span style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>cr 預計</span>
-                      </div>
+                  <div style={{ marginTop: s.elec.length > 0 ? 10 : 0, paddingTop: s.elec.length > 0 ? 10 : 0, borderTop: s.elec.length > 0 ? "0.5px solid var(--color-border-tertiary)" : "none" }}>
+                    <div style={{ fontSize: 9, color: "var(--color-text-tertiary)", marginBottom: 5, fontWeight: 500, letterSpacing: ".06em" }}>跨域+自由（本系／他系／校院級）</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>本學期預計</span>
+                      <input type="number" min={0} max={20} step={1} inputMode="numeric" value={cross[s.sem] || 0}
+                        aria-label={`${s.sem} 預計跨域及自由選修學分`}
+                        onChange={(e) => updateCross(s.sem, Math.max(0, +e.target.value))}
+                        style={{ width: 60, fontSize: 13 }} />
+                      <span style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>cr</span>
                     </div>
-                  )}
+                    <div style={{ fontSize: 9, color: "var(--color-text-tertiary)", lineHeight: 1.5, marginTop: 5 }}>
+                      不含已勾選的 ★ 課程（超過 21cr 會自動轉入）。若其中包含額外博雅，須先修滿必修 15cr，且額外博雅合計最多 4cr。
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -405,7 +421,7 @@ function PlannerTab({ checked, toggleCourse, cross, updateCross }) {
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 11 }}>
           <span style={{ color: "var(--color-text-secondary)" }}>已規劃</span>
           <span style={{ fontWeight: 500, color: onTrack ? "var(--color-text-success)" : "var(--color-text-warning)" }}>
-            {totalPlanned} / {needed} {onTrack ? "✓ 足夠畢業" : `還差 ${needed - totalPlanned} cr`}
+            {totalPlanned} / {needed} {status}
           </span>
         </div>
         <Bar pct={(totalPlanned / Math.max(needed, 1)) * 100} color={onTrack ? "var(--color-text-success)" : "var(--color-text-warning)"} />
@@ -413,7 +429,7 @@ function PlannerTab({ checked, toggleCourse, cross, updateCross }) {
           {[
             { l: "★ 選修",    v: starDone,             t: 21,  ok: starDone >= 21 },
             { l: "跨域+自由", v: crossDone,             t: 20,  ok: crossDone >= 20 },
-            { l: "畢業總學分", v: 61+19+totalPlanned,   t: 132, ok: (61+19+totalPlanned) >= 132 },
+            { l: "畢業總學分", v: projectedTotal,        t: GRADUATION_CREDITS, ok: projectedTotal >= GRADUATION_CREDITS },
           ].map(({ l, v, t, ok }) => (
             <div key={l} style={{ background: "var(--color-background-primary)", borderRadius: 6, padding: "8px 10px", border: ok ? "0.5px solid var(--color-border-success)" : "0.5px solid var(--color-border-tertiary)" }}>
               <div style={{ fontSize: 10, color: "var(--color-text-secondary)", marginBottom: 3 }}>{l}</div>
@@ -422,6 +438,9 @@ function PlannerTab({ checked, toggleCourse, cross, updateCross }) {
               </div>
             </div>
           ))}
+        </div>
+        <div style={{ fontSize: 10, color: "var(--color-text-tertiary)", lineHeight: 1.5, marginTop: 9 }}>
+          認列規則：必修博雅 15cr 計入共同必修；完成後額外博雅最多 4cr 可計入跨域+自由。★ 超過 21cr 的部分會自動轉入跨域+自由{starOverflow > 0 ? `（目前 ${starOverflow}cr）` : ""}。
         </div>
       </div>
     </div>
@@ -467,16 +486,16 @@ export default function App() {
   return (
     <div style={{ fontFamily: "var(--font-sans)", color: "var(--color-text-primary)", padding: "1rem 0", maxWidth: 680 }}>
       <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontSize: 17, fontWeight: 500 }}>NTUT EE Roadmap</div>
+        <div style={{ fontSize: 17, fontWeight: 500 }}>NTUT ECE Roadmap</div>
         <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 2 }}>
-          113-batch · Y3S1 進行中 · 2028 畢業 · 目標：AI Application Engineer
+          電子工程系 · 113-batch · Y3S1 進行中 · 2028 畢業 · 目標：AI Application Engineer
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: "1rem" }}>
         {[
           { v: "85.28", s: "整體平均" },
-          { v: "80 / 132", s: "61% 學分" },
+          { v: `${COMPLETED_CREDITS} / ${GRADUATION_CREDITS}`, s: `${Math.round(COMPLETED_CREDITS / GRADUATION_CREDITS * 100)}% 學分` },
           { v: "19 / 55", s: "前次班排名" },
           { v: "34 / 109", s: "前次系排名" },
         ].map(({ v, s }) => (
