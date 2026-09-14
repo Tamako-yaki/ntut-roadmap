@@ -6,7 +6,7 @@ Open `index.html` directly, or serve the repository with `python3 -m http.server
 
 ## Pages
 
-- **修課紀錄**: all 44 course records from 113-1 through 114-2, grouped into collapsible semesters. Includes stages, course numbers/codes, EMI, zero-credit courses and withdrawals.
+- **修課紀錄**: all 45 course records from 113-1 through 115-0, grouped into collapsible semesters. Includes stages, course numbers/codes, EMI, zero-credit courses and withdrawals.
 - **選課計劃**: existing future course selections and cross/free credits, with workload and projected totals.
 - **學分狀況**: earned vs projected category totals, remaining gaps, and completed general-education courses.
 
@@ -29,7 +29,7 @@ The original `ntut_roadmap.jsx` duplicated the application and depended on an en
 
 ## Source of truth and limits
 
-The supplied `113-1.pdf`, `113-2.pdf`, `114-1.pdf`, and `114-2.pdf` are the source for course names, numbers/codes, stages, required/elective/general-education flags, credits, grades, EMI and semester statistics. Original PDFs and personal identifiers are not included in this public repository. Source filenames and print dates are recorded in the data.
+The supplied `113-1.pdf`, `113-2.pdf`, `114-1.pdf`, and `114-2.pdf` are the source for course names, numbers/codes, stages, required/elective/general-education flags, credits, grades, EMI and semester statistics. The 115-0 summer internship record is a user-confirmed earned-credit entry; no transcript or course number was supplied for it. Original PDFs and personal identifiers are not included in this public repository. Source filenames and print dates are recorded in the data.
 
 | Semester | Earned credits | Reported average |
 | --- | ---: | ---: |
@@ -37,11 +37,12 @@ The supplied `113-1.pdf`, `113-2.pdf`, `114-1.pdf`, and `114-2.pdf` are the sour
 | 113-2 | 19 | 83.0 |
 | 114-1 | 23 | 86.4 |
 | 114-2 | 19 | 84.3 |
-| Total | 80 | — |
+| 115-0 | 2 | 未提供（使用者確認） |
+| Total | 82 | — |
 
 W withdrawals earn zero credits. Numeric passing scores (60+) and P earn the course's credits. Zero-credit requirements remain visible. In 114-2, the transcript reports 19 enrolled credits as well as 19 earned credits, excluding the two W courses (6 credits). The old unsupported class/department rankings and cumulative average are no longer shown. Semester averages use the printed one-decimal figures, rather than reconstructing an official average from rounded data.
 
-Graduation targets (28/63/21/20 = 132), course-to-bucket assignments and elective overflow recognition remain **existing planning assumptions**, not facts established by these transcripts. `bucket` is explicitly separate from transcript `type`. General-education courses total 10 earned credits and are already included in the common-required bucket. The transcripts do not establish their dimensions; the former unverified app-bug claim and dimension breakdown have been replaced with the actual course list. Future required courses are assumed to be passed in projections, never counted as earned history. This is a planning aid, not an official graduation audit.
+Graduation targets (28/63/21/20 = 132), course-to-bucket assignments and elective overflow recognition remain **existing planning assumptions**, not facts established by these transcripts. `bucket` is explicitly separate from transcript `type`. General-education courses total 10 earned credits and are already included in the common-required bucket. The transcripts do not establish their dimensions; the former unverified app-bug claim and dimension breakdown have been replaced with the actual course list. The 115-0 internship adds 2 earned major-required credits and is removed from the 115-2 projection. Future required courses are assumed to be passed in projections, never counted as earned history. This is a planning aid, not an official graduation audit.
 
 To add a later transcript, append a semester to `data/transcripts.js`, retaining a distinct semester/course-number ID, and verify its sum against the reported earned credits. Reconcile the future plan at the same time so a completed semester is no longer projected. To change future course options or verified targets, edit `data/plan.js`.
 

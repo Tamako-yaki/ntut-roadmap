@@ -537,5 +537,31 @@ Roadmap.history = [
         "id": "114-2::360347"
       }
     ]
-  }
+  },
+{
+  "sem": "115-0",
+  "yr": "Summer 2026",
+  "note": "暑期校外實習已完成 · 使用者確認已取得學分",
+  "average": null,
+  "reportedCredits": 2,
+  "reportedEarned": 2,
+  "conduct": null,
+  "source": "使用者補充",
+  "printed": null,
+  "kind": "user-confirmed",
+  "courses": [
+    {
+      "number": null,
+      "code": null,
+      "name": "校外實習",
+      "stage": 1,
+      "credits": 2,
+      "score": "P",
+      "status": "已取得",
+      "type": "必",
+      "bucket": "major",
+      "id": "115-0::校外實習"
+    }
+  ]
+}
 ];
