@@ -1,53 +1,54 @@
 # NTUT ECE Roadmap
 
-`index.html` 是可攜式的單檔網頁版，不需要 Node.js、npm、React 或任何額外套件。
+A small personal credit tracker and semester planner. Plain HTML, CSS and JavaScript: no framework, build step, package install, server API, or database.
 
-## 使用方式
+Open `index.html` directly, or serve the repository with `python3 -m http.server 8000`. GitHub Pages continues to serve `master` at https://tamako-yaki.github.io/ntut-roadmap/.
 
-直接以 Chrome、Firefox、Safari 或 Edge 開啟 `index.html` 即可。它也可放到任何靜態網站服務（例如 GitHub Pages、Cloudflare Pages 或自己的網頁空間）後，用網址在手機、平板與電腦上使用。
+## Pages
 
-## 一鍵部署到 GitHub Pages
+- **修課紀錄**: all 44 course records from 113-1 through 114-2, grouped into collapsible semesters. Includes stages, course numbers/codes, EMI, zero-credit courses and withdrawals.
+- **選課計劃**: existing future course selections and cross/free credits, with workload and projected totals.
+- **學分狀況**: earned vs projected category totals, remaining gaps, and completed general-education courses.
 
-本專案已經自動部署到 GitHub Pages！你可以直接訪問：
+## Architecture
 
-**🌐 https://tamako-yaki.github.io/ntut-roadmap/**
+| File | Responsibility |
+| --- | --- |
+| `index.html` | Page shell and dialogs |
+| `assets/styles.css` | Responsive presentation |
+| `data/transcripts.js` | Transcript course records and reported semester statistics |
+| `data/plan.js` | Future course options and existing graduation targets |
+| `assets/model.js` | Pure earned-credit and projection calculations |
+| `assets/storage.js` | Local persistence and import validation |
+| `assets/app.js` | Rendering and interaction |
+| `tests/credits.test.cjs` | Transcript reconciliation, projections and imports |
 
-### 手動更新部署
+Deferred classic scripts share a single `Roadmap` namespace. This deliberately keeps direct file opening working without a module server or bundler. Transcript facts, planning rules, calculations and UI are separate; there is one calculation path for summaries.
 
-如果你修改了 `index.html` 或其他檔案，可以按照以下步驟更新部署：
+The original `ntut_roadmap.jsx` duplicated the application and depended on an environment-specific `window.storage` API. It is removed to avoid maintaining two implementations; it remains in Git history. React offers little benefit at this scope.
 
-```bash
-# 1. 提交你的修改
-git add .
-git commit -m "你的修改訊息"
+## Source of truth and limits
 
-# 2. 推送到 GitHub
-git push
-```
+The supplied `113-1.pdf`, `113-2.pdf`, `114-1.pdf`, and `114-2.pdf` are the source for course names, numbers/codes, stages, required/elective/general-education flags, credits, grades, EMI and semester statistics. Original PDFs and personal identifiers are not included in this public repository. Source filenames and print dates are recorded in the data.
 
-GitHub Pages 通常會在幾分鐘內自動更新。
+| Semester | Earned credits | Reported average |
+| --- | ---: | ---: |
+| 113-1 | 19 | 87.3 |
+| 113-2 | 19 | 83.0 |
+| 114-1 | 23 | 86.4 |
+| 114-2 | 19 | 84.3 |
+| Total | 80 | — |
 
-### 從零開始部署
+W withdrawals earn zero credits. Numeric passing scores (60+) and P earn the course's credits. Zero-credit requirements remain visible. In 114-2, the transcript reports 19 enrolled credits as well as 19 earned credits, excluding the two W courses (6 credits). The old unsupported class/department rankings and cumulative average are no longer shown. Semester averages use the printed one-decimal figures, rather than reconstructing an official average from rounded data.
 
-如果你要在自己的帳號下部署：
+Graduation targets (28/63/21/20 = 132), course-to-bucket assignments and elective overflow recognition remain **existing planning assumptions**, not facts established by these transcripts. `bucket` is explicitly separate from transcript `type`. General-education courses total 10 earned credits and are already included in the common-required bucket. The transcripts do not establish their dimensions; the former unverified app-bug claim and dimension breakdown have been replaced with the actual course list. Future required courses are assumed to be passed in projections, never counted as earned history. This is a planning aid, not an official graduation audit.
 
-1. **Fork 本倉庫** 到你的 GitHub 帳號
-2. **設定 GitHub Pages**：
-   - 進入倉庫設定 → Pages
-   - 來源選擇 `master` 分支 `/ (root)` 目錄
-   - 點擊 Save
-3. 部署完成後，你的網站會在 `https://<你的用戶名>.github.io/ntut-roadmap/` 可用
+To add a later transcript, append a semester to `data/transcripts.js`, retaining a distinct semester/course-number ID, and verify its sum against the reported earned credits. Reconcile the future plan at the same time so a completed semester is no longer projected. To change future course options or verified targets, edit `data/plan.js`.
 
-## 資料保存與跨裝置
+## Saved plans
 
-勾選的選修與「跨域+自由」學分會存在**目前這個瀏覽器／裝置**的 localStorage 中；不會自動傳到雲端，也不會離開你的裝置。
+Selections remain local to the browser/device. Existing keys `ntut-roadmap-checked` and `ntut-roadmap-cross` and the version-1 JSON export format are preserved. Export/import moves selections between devices; it does not modify the transcript source records. Unknown stale course/semester IDs are ignored. Invalid imports are rejected before replacing the current plan. Cross/free inputs accept integers from 0 to 20. Storage failures show an export-backup message.
 
-要手動移轉資料：在舊裝置按「匯出規劃」複製資料，在新裝置開啟同一頁後按「匯入規劃」貼上即可。若希望每台裝置自動同步，還需要部署網站並連接帳號／資料庫服務。
+## Verification
 
-## 專案結構
-
-- `index.html` - 可獨立運行的網頁版本，所有功能完整
-- `ntut_roadmap.jsx` - 原始 React 組件版本（依賴 `window.storage`，需特定環境執行）
-- `README.md` - 本說明文件
-
-原始 `ntut_roadmap.jsx` 仍保留未動；它是 React 元件，而且依賴原內嵌環境的 `window.storage`，因此不能直接用一般瀏覽器開啟。
+Run `node --test tests/credits.test.cjs` (Node is only needed for tests). No npm dependencies are required. For UI changes, check history, planner, credit summary, saved-plan reload, export/import, and narrow-screen table scrolling.
