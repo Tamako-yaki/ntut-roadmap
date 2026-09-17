@@ -47,6 +47,8 @@
     .choice { align-items: center; cursor: pointer; color: var(--muted); }
     .choice input { margin: 0; width: 15px; height: 15px; accent-color: var(--blue); flex: 0 0 auto; }
     .choice.on { color: var(--ink); }
+    .required-choice { padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; }
+    .required-choice.on { border-color: #86efac; background: var(--green-bg); }
     .tag { margin-right: 4px; font-size: 9px; }
     .retake { color: var(--red); }
     .footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 14px; color: var(--muted); background: var(--panel); font-size: 11px; }

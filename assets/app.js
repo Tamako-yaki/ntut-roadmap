@@ -1,13 +1,13 @@
 
   (() => {
     'use strict';
-    const { history, semesters, targets, model, storage } = Roadmap;
+    const { history, semesters, flexibleRequirements, targets, model, storage } = Roadmap;
     const completed = model.completed(history);
     const completedCredits = completed.total;
     const graduationCredits = Object.values(targets).reduce((a,b) => a+b, 0);
     const tagNames = { ai: 'AI', sys: 'SYS', sw: 'SW' };
     const bucketClasses = { '△': 'gened', '▲': 'major', '★': 'elec', '跨域': 'cross' };
-    const state = storage.load(semesters);
+    const state = storage.load(semesters, flexibleRequirements);
     function save() {
       document.querySelector('#save-status').textContent = storage.save(state) ? '' : '無法儲存至瀏覽器，請匯出規劃備份。';
     }
@@ -17,7 +17,7 @@
     function loadInfo(cr) { return cr === 0 ? ['尚未規劃', 'info'] : cr <= 12 ? ['輕鬆', 'green'] : cr <= 17 ? ['正常', 'info'] : cr <= 20 ? ['偏重', 'warn'] : ['過重', 'danger']; }
     function courseId(s, c) { return `${s.sem}::${c.n}`; }
     function electiveCredits(s) { return model.electiveCredits(s, state); }
-    function projection() { return model.project(history, semesters, state, targets); }
+    function projection() { return model.project(history, semesters, state, targets, flexibleRequirements); }
     function renderStaticTop() {
       const stats = [[`${completedCredits} / ${graduationCredits}`, '已取得學分 / 規劃目標'], [history.length, '已記錄學期'], [completed.withdrawn, '撤選課程（不計學分）'], [completed.zeroCredit, '已通過零學分課程']];
       document.querySelector('#stats').innerHTML = stats.map(([v,l]) => `<div class="stat"><strong>${v}</strong><span class="small">${l}</span></div>`).join('');
@@ -33,15 +33,18 @@
       const star = p.buckets.elec, cross = p.buckets.free, total = p.total, starOverflow = p.overflow;
       const totalEnough = total >= graduationCredits, categoriesEnough = p.categoriesEnough, track = totalEnough && categoriesEnough;
       const status = totalEnough ? (categoriesEnough ? '✓ 已達規劃學分目標' : '總學分足夠，分類未達標') : `還差 ${graduationCredits - total} cr`;
-      html += `<div class="notice">⚠ <strong>115-2 補修注意：</strong>電子學(二) 3cr + 機率 3cr 要在同一學期補修，加上其餘 4cr 必修，115-2 必修共 10cr。選修盡量控制，避免過重。</div><section class="summary"><div class="summary-head"><strong>畢業計劃總覽 <span class="small">(115-1 以後)</span></strong><span class="${track ? 'ok-text' : 'warn-text'}"><b>${planned} / ${needed}</b> ${status}</span></div>${bar(planned, needed, track ? 'var(--green)' : 'var(--amber)')}<div class="summary-grid">${mini('★ 選修', star, 21)}${mini('跨域+自由', cross, 20)}${mini('畢業總學分', total, graduationCredits)}</div><div class="small" style="margin-top:9px">既有規劃假設（待核對）：必修博雅 15cr 計入共同必修；完成後額外博雅最多 4cr 可計入跨域+自由。★ 超過 21cr 的部分會自動轉入跨域+自由${starOverflow ? `（目前 ${starOverflow}cr）` : ''}。</div></section>`;
+      html += `<div class="notice">⚠ <strong>115-2 補修注意：</strong>電子學(二) 3cr + 機率 3cr 要在同一學期補修，加上其餘 4cr 必修，固定必修共 10cr；若將學生自選向度 1cr 排在本學期，則為 11cr。</div><section class="summary"><div class="summary-head"><strong>畢業計劃總覽 <span class="small">(115-1 以後)</span></strong><span class="${track ? 'ok-text' : 'warn-text'}"><b>${planned} / ${needed}</b> ${status}</span></div>${bar(planned, needed, track ? 'var(--green)' : 'var(--amber)')}<div class="summary-grid">${mini('★ 選修', star, 21)}${mini('跨域+自由', cross, 20)}${mini('畢業總學分', total, graduationCredits)}</div><div class="small" style="margin-top:9px">既有規劃假設（待核對）：必修博雅 15cr 計入共同必修；完成後額外博雅最多 4cr 可計入跨域+自由。★ 超過 21cr 的部分會自動轉入跨域+自由${starOverflow ? `（目前 ${starOverflow}cr）` : ''}。</div></section>`;
       document.querySelector('#planner').innerHTML = html;
       document.querySelectorAll('[data-course]').forEach(input => input.addEventListener('change', event => { state.checked[event.target.dataset.course] = event.target.checked; save(); renderPlanner(); renderCredits(); }));
+      document.querySelectorAll('[data-placement]').forEach(input => input.addEventListener('change', event => { state.placements[event.target.dataset.placement] = event.target.value; save(); renderPlanner(); renderCredits(); }));
       document.querySelectorAll('[data-cross]').forEach(input => input.addEventListener('change', event => { state.cross[event.target.dataset.cross] = Math.min(20, Math.max(0, Math.trunc(Number(event.target.value) || 0))); save(); renderPlanner(); renderCredits(); }));
     }
     function mini(label, value, total) { const ok = value >= total; return `<div class="mini ${ok ? 'ok' : ''}"><div class="small">${label}</div><strong class="${ok ? 'ok-text' : ''}">${value} / ${total}${ok ? ' ✓' : ''}</strong></div>`; }
     function semesterCard(s) {
-      const rc = s.req.reduce((sum, c) => sum + c.cr, 0), ec = electiveCredits(s), cc = Number(state.cross[s.sem]) || 0, total = rc + ec + cc, [level, tone] = loadInfo(total);
-      const req = s.req.length ? s.req.map(c => `<div class="course ${c.retake ? 'retake' : ''}"><span class="bucket ${c.retake ? 'badge danger' : bucketClasses[c.b]}">${c.retake ? '補修' : c.b} ${c.cr}cr</span><span>${escapeHtml(c.n)}</span></div>`).join('') : '<div class="small"><i>本學期無必修課</i></div>';
+      const fixedCredits = s.req.reduce((sum, c) => sum + c.cr, 0), placedCredits = model.flexibleCredits(s, flexibleRequirements, state), rc = fixedCredits + placedCredits, ec = electiveCredits(s), cc = Number(state.cross[s.sem]) || 0, total = rc + ec + cc, [level, tone] = loadInfo(total);
+      const fixedReq = s.req.map(c => `<div class="course ${c.retake ? 'retake' : ''}"><span class="bucket ${c.retake ? 'badge danger' : bucketClasses[c.b]}">${c.retake ? '補修' : c.b} ${c.cr}cr</span><span>${escapeHtml(c.n)}</span></div>`).join('');
+      const flexibleReq = flexibleRequirements.filter(requirement => requirement.semesters.includes(s.sem)).map(requirement => { const selected = model.requirementSemester(requirement, state) === s.sem; return `<label class="choice required-choice ${selected ? 'on' : ''}"><input type="radio" name="placement-${escapeHtml(requirement.id)}" data-placement="${escapeHtml(requirement.id)}" value="${s.sem}" ${selected ? 'checked' : ''}><span>${bucket(requirement.b)} ${escapeHtml(requirement.n)} <span class="small">${requirement.cr}cr · ${requirement.semesters.join(' / ')} 二選一</span></span></label>`; }).join('');
+      const req = fixedReq + flexibleReq || '<div class="small"><i>本學期無必修課</i></div>';
       const choices = s.elec.map(c => { const id = courseId(s, c), on = Boolean(state.checked[id]); return `<label class="choice ${on ? 'on' : ''}"><input type="checkbox" data-course="${escapeHtml(id)}" ${on ? 'checked' : ''}><span><span class="tag ${c.t}">${tagNames[c.t]}</span>${c.pri ? '<span class="warn-text">★</span> ' : ''}${escapeHtml(c.n)} <span class="small">${c.cr}cr</span></span></label>`; }).join('');
       const cross = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><p class="section-label">跨域+自由（本系／他系／校院級）</p><label class="small">本學期預計 <input class="cross-input" type="number" min="0" max="20" step="1" inputmode="numeric" value="${cc}" data-cross="${s.sem}" aria-label="${s.sem} 預計跨域及自由選修學分"> cr</label><div class="small" style="margin-top:5px">不含已勾選的 ★ 課程（超過 21cr 會自動轉入）。若其中包含額外博雅，須先修滿必修 15cr，且額外博雅合計最多 4cr。</div></div>`;
       return `<article class="card ${s.retakeWarning ? 'warning' : ''}"><div class="card-head"><div class="card-title"><div><span class="semester">${s.sem}</span> <span class="small">${s.yr}</span> ${s.retakeWarning ? '<span class="badge danger">⚠ 補修</span>' : ''} ${s.grad ? '<span class="badge warn">畢業學期</span>' : ''}</div><div class="small">${s.note}</div></div><div class="credits"><strong>${total}</strong><span class="small">cr</span><span class="badge ${tone}">${level}</span></div></div><div class="course-columns"><div><p class="section-label">必修 ${rc ? `${rc} cr` : '（無）'}</p>${req}</div><div><p class="section-label">★ 選修 ${ec ? `+${ec} cr 已選` : '（未選）'}</p>${choices}${cross}</div></div><div class="footer ${tone}"><span>${rc}cr 必修${ec ? ` + ${ec}cr ★` : ''}${cc ? ` + ${cc}cr 跨域` : ''} = ${total}cr 合計</span><span>${total ? '已儲存 ✓' : '尚未規劃'}</span></div></article>`;
@@ -54,15 +57,14 @@
     }
     function showDialog(kind) {
       const dialog = document.querySelector('#data-dialog'), field = document.querySelector('#data-field'), title = document.querySelector('#dialog-title'), description = document.querySelector('#dialog-description'), confirm = document.querySelector('#dialog-confirm');
-      if (kind === 'export') { title.textContent = '匯出你的規劃'; description.textContent = '複製以下內容，然後在另一台裝置選擇「匯入規劃」。'; field.value = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), checked: state.checked, cross: state.cross }, null, 2); field.readOnly = true; confirm.textContent = '複製'; confirm.onclick = async () => { try { await navigator.clipboard.writeText(field.value); confirm.textContent = '已複製'; } catch { field.select(); document.execCommand('copy'); confirm.textContent = '已複製'; } }; }
-      else { title.textContent = '匯入你的規劃'; description.textContent = '貼上先前匯出的內容。匯入會覆蓋這個瀏覽器目前的選課資料。'; field.value = ''; field.readOnly = false; confirm.textContent = '匯入'; confirm.onclick = () => { try { const data = JSON.parse(field.value); const clean = storage.validate(data, semesters); state.checked = clean.checked; state.cross = clean.cross; save(); renderPlanner(); renderCredits(); dialog.close(); } catch { description.textContent = '格式無法讀取，請確認貼上的是由本頁匯出的完整內容。'; } }; }
+      if (kind === 'export') { title.textContent = '匯出你的規劃'; description.textContent = '複製以下內容，然後在另一台裝置選擇「匯入規劃」。'; field.value = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), checked: state.checked, cross: state.cross, placements: state.placements }, null, 2); field.readOnly = true; confirm.textContent = '複製'; confirm.onclick = async () => { try { await navigator.clipboard.writeText(field.value); confirm.textContent = '已複製'; } catch { field.select(); document.execCommand('copy'); confirm.textContent = '已複製'; } }; }
+      else { title.textContent = '匯入你的規劃'; description.textContent = '貼上先前匯出的內容。匯入會覆蓋這個瀏覽器目前的選課資料。'; field.value = ''; field.readOnly = false; confirm.textContent = '匯入'; confirm.onclick = () => { try { const data = JSON.parse(field.value); const clean = storage.validate(data, semesters, flexibleRequirements); state.checked = clean.checked; state.cross = clean.cross; state.placements = clean.placements; save(); renderPlanner(); renderCredits(); dialog.close(); } catch { description.textContent = '格式無法讀取，請確認貼上的是由本頁匯出的完整內容。'; } }; }
       dialog.showModal(); if (kind === 'export') field.select();
     }
     document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => { const tab = button.dataset.tab; document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === button)); document.querySelector('#history').classList.toggle('hide', tab !== 'history'); document.querySelector('#planner').classList.toggle('hide', tab !== 'planner'); document.querySelector('#credits').classList.toggle('hide', tab !== 'credits'); }));
     document.querySelector('#export-button').addEventListener('click', () => showDialog('export'));
     document.querySelector('#import-button').addEventListener('click', () => showDialog('import'));
-    document.querySelector('#reset-button').addEventListener('click', () => { if (confirm('要清除這個瀏覽器中所有已勾選的課程與跨域學分嗎？')) { state.checked = {}; state.cross = {}; save(); renderPlanner(); renderCredits(); } });
+    document.querySelector('#reset-button').addEventListener('click', () => { if (confirm('要清除這個瀏覽器中所有已勾選的課程與跨域學分嗎？')) { state.checked = {}; state.cross = {}; state.placements = Object.fromEntries(flexibleRequirements.map(requirement => [requirement.id, requirement.defaultSem])); save(); renderPlanner(); renderCredits(); } });
     document.querySelector('#dialog-cancel').addEventListener('click', () => document.querySelector('#data-dialog').close());
     renderStaticTop(); renderHistory(); renderPlanner(); renderCredits();
   })();
-  
